@@ -27,9 +27,12 @@ const float XMIN = -10.0;
 const float XMAX = 10.0;
 const float YMIN = -10.0;
 const float YMAX = 10.0;
-//fog range
-const float FMAX = -70;
-const float FMIN = -120;
+// //fog range
+// const float Z1 = -80;
+// const float Z2 = -200;
+//NO FOG
+const float Z1 = 0;
+const float Z2 = 0;
 
 TextureBMP texture;
 
@@ -43,8 +46,8 @@ vector<SceneObject*> sceneObjects;
 glm::vec3 trace(Ray ray, int step)
 {
 	glm::vec3 backgroundCol(0);						//Background colour = (0,0,0)
-	glm::vec3 lightPos1(20, 30, -50);					//Light's position
-	glm::vec3 lightPos2(-20, 30, -50);	
+	glm::vec3 lightPos1(15, 29, 3);					//Light's position
+	glm::vec3 lightPos2(-15, 29, 3);	
 	glm::vec3 color(0);
 	SceneObject* obj;
 
@@ -53,17 +56,31 @@ glm::vec3 trace(Ray ray, int step)
 	obj = sceneObjects[ray.index];					//object on which the closest point of intersection is found
 
 	
-	if (ray.index == 0){ //first earth spere
+	if (ray.index == 16){ //first earth spere index 16
 		glm::vec3 nv = sceneObjects[ray.index]->normal(ray.hit);
 		glm::vec3 n1 = glm::normalize(nv);
-        float s = (n1.x) / (2 * M_PI) + 0.5;
-        float t = (n1.y) / (2 * M_PI) + 0.5;
+        // float s = (n1.x) / (2 * M_PI) + 0.5;
+        // float t = (n1.y) / (2 * M_PI) + 0.5; atan2 
+
+		float s = 0.5 + (atan2(n1.z, n1.x)) / (2 * M_PI) ;
+        float t = 0.5 - (asin(n1.y)) / (M_PI); 
 
         color = texture.getColorAt(s, t);
 		obj->setColor(color);
 	}
+	
+	if (ray.index == 4) //table_plane index  4
+	{
+		//Stripe pattern
+		int stripeWidth = 5;
+		int iz = (ray.hit.z) / stripeWidth;
+		int k = iz % 2; //2 colors
+		if (k == 0) color = glm::vec3(1, 0, 0);
+		else color = glm::vec3(0, 0.5, 0.5);
+		obj->setColor(color); 
+	}
 
-	if (ray.index == 9) //plan florr index 
+	if (ray.index == 5) //floor index 5
 	{
 		//Stripe pattern
 		int stripeWidth = 5;
@@ -74,10 +91,20 @@ glm::vec3 trace(Ray ray, int step)
 		obj->setColor(color); 
 	}
 
-
+	if (ray.index == 6)  //backbrounf
+	{
+		float x1 = 40, x2 = -40, y1=30,y2=-15;
+		//Add code for texture mapping here
+		float texcoords = (ray.hit.x - x1)/(x2-x1);
+		float texcoordt = (ray.hit.y - y1)/(y2-y1);
+		if(texcoords > 0 && texcoords < 1 &&
+		texcoordt > 0 && texcoordt < 1)
+		{
+			color=texture.getColorAt(texcoords, texcoordt);
+			obj->setColor(color);
+		}
+	}
 	
-
-	//color = obj->getColor();						//Object's colour
 	color = obj->lighting(lightPos1, lightPos2, -ray.dir, ray.hit);
 
 	//shadow colr
@@ -161,10 +188,10 @@ glm::vec3 trace(Ray ray, int step)
 	}
 
 	//fog
-	float ft = (ray.hit.z - FMAX) / (FMIN - FMAX); //liner
+	float ft = (ray.hit.z - Z1) / (Z2 - Z1); //liner
 	//float ft = 1 - exp(ray.hit.z-FMAX);
 	glm::vec3 white(1,1,1);
-	if (ray.hit.z < FMIN || ray.hit.z > FMAX) {ft = 0;}
+	if (ray.hit.z < Z2 || ray.hit.z > Z1) {ft = 0;}
 	color = (1 - ft) * color + ft * white;
 	return color;
 }
@@ -192,22 +219,20 @@ void display()
 		for (int j = 0; j < NUMDIV; j++)
 		{
 			yp = YMIN + j * cellY;
-			glm::vec3 dir1(xp + 0.25 * cellX, yp + 0.75 * cellY, -EDIST);	
-			glm::vec3 dir2(xp + 0.25 * cellX, yp + 0.25 * cellY, -EDIST);	
-			glm::vec3 dir3(xp + 0.75 * cellX, yp + 0.25 * cellY, -EDIST);	
-			glm::vec3 dir4(xp + 0.75 * cellX, yp + 0.75 * cellY, -EDIST);	
+			// glm::vec3 dir1(xp + 0.25 * cellX, yp + 0.75 * cellY, -EDIST);	
+			// glm::vec3 dir2(xp + 0.25 * cellX, yp + 0.25 * cellY, -EDIST);	
+			// glm::vec3 dir3(xp + 0.75 * cellX, yp + 0.25 * cellY, -EDIST);	
+			// glm::vec3 dir4(xp + 0.75 * cellX, yp + 0.75 * cellY, -EDIST);	
+
+			glm::vec3 dir1(xp + 0.5 * cellX, yp + 0.5 * cellY, -EDIST);	
 
 			Ray ray1 = Ray(eye, dir1);
-			Ray ray2 = Ray(eye, dir2);
-			Ray ray3 = Ray(eye, dir3);
-			Ray ray4 = Ray(eye, dir4);
+	
+			
+			glm::vec3 col = trace(ray1, 1);
+			glColor3f(col.r, col.g, col.b);
 
-			//glm::vec3 dir1(xp + 0.5 * cellX, yp + 0.5 * cellY, -EDIST);	
-			//glm::vec3 col = trace(ray1, 1)
-			//glColor3f(col.r, col.g, col.b);
-
-			glm::vec3 col = trace(ray1, 1)+trace(ray2, 1)+trace(ray3, 1)+trace(ray4, 1); 
-			glColor3f(col.r/4, col.g/4, col.b/4);
+	
 			glVertex2f(xp, yp);
 			glVertex2f(xp + cellX, yp);
 			glVertex2f(xp + cellX, yp + cellY);
@@ -226,120 +251,143 @@ void display()
 //   It also initializes the OpenGL 2D orthographc projection matrix for drawing the
 //     the ray traced image.
 //----------------------------------------------------------------------------------
-void initialize()
+void creat_table()
 {
-    glMatrixMode(GL_PROJECTION);
-    gluOrtho2D(XMIN, XMAX, YMIN, YMAX);
+	//table
+	//4 table foot 
+	Cylinder *table_foot1 = new Cylinder(glm::vec3(-5, -10, -50), 0.2, 4.5); table_foot1->setColor(glm::vec3(0, 1, 1));
+	Cylinder *table_foot2 = new Cylinder(glm::vec3(-5, -10, -60), 0.2, 4.5); table_foot2->setColor(glm::vec3(0, 1, 1));
+	Cylinder *table_foot3 = new Cylinder(glm::vec3(5, -10, -50), 0.2, 4.5); table_foot3->setColor(glm::vec3(0, 1, 1));
+	Cylinder *table_foot4 = new Cylinder(glm::vec3(5, -10, -60), 0.2, 4.5); table_foot4->setColor(glm::vec3(0, 1, 1));
+	//plane table
+	Plane *table_plane = new Plane (glm::vec3(-10., -5, -45), //Point A
+	glm::vec3(10., -5, -45), //Point B
+	glm::vec3(10., -5, -65), //Point C
+	glm::vec3(-10., -5, -65)); //Point D
+	table_plane->setColor(glm::vec3(1, 1, 1));
+	table_plane->setSpecularity(false);
 
-    glClearColor(0, 0, 0, 1);
+	sceneObjects.push_back(table_foot1); //index0
+	sceneObjects.push_back(table_foot2);
+	sceneObjects.push_back(table_foot3);
+	sceneObjects.push_back(table_foot4);
+	sceneObjects.push_back(table_plane); //index 4
 
-	texture = TextureBMP("Butterfly.bmp");
+}
 
-	
-
-
-	Sphere *sphere1 = new Sphere(glm::vec3(-12, -8, -70.0), 3);        //earth on a cone
-	sphere1->setColor(glm::vec3(0, 0, 1));   //Set colour to blue
-
-	Sphere *sphere2 = new Sphere(glm::vec3(0, 0, -105.0), 15);       //mian big boll reflactive
-	sphere2->setColor(glm::vec3(1, 0, 0));   //Set colour to red
-	sphere2->setReflectivity(true, 0.6);
-
-	Sphere *sphere3 = new Sphere(glm::vec3(-5, -8, -70), 3);    	   //transpartent infront of sphere2
-	sphere3->setColor(glm::vec3(1, 0, 0));   //Set colour to red
-	sphere3->setTransparency(true, 0.6);
-	sphere3->setSpecularity(false);
-
-	Sphere *sphere4 = new Sphere(glm::vec3(11, -5, -70.0), 3);    	   //refreactive with 1.5
-	sphere4->setColor(glm::vec3(0, 0, 0));   //Set colour to green
-	sphere4->setRefractivity(true, 0.6, 1.5);
-	sphere2->setReflectivity(true, 0.6);
-
-	Sphere *sphere5 = new Sphere(glm::vec3(3, -8, -70.0), 3);    	   //refreactive with 1.01
-	sphere5->setColor(glm::vec3(0, 0, 0));   //Set colour to green
-	sphere5->setRefractivity(true, 1, 1.01);
-	sphere2->setReflectivity(true, 0.6);
-
-	//Cone 
-	Cone *cone1 = new Cone(glm::vec3(-12, -9, -70), 2, 3);
-	cone1->setColor(glm::vec3(0, 1, 1));   //Set colour to clan
-	Cone *cone2 = new Cone(glm::vec3(3, -10, -70.0), 2, 3);
-	cone2->setColor(glm::vec3(0, 1, 1));   //Set colour to clan
-
-	//cylinder 
-	Cylinder *clind1 = new Cylinder(glm::vec3(-5, -10, -70), 1, 1.5);
-	clind1->setColor(glm::vec3(0, 1, 1));   //Set colour to clan
-	Cylinder *clind2 = new Cylinder(glm::vec3(11, -8, -70.0), 1, 1.5);
-	clind2->setColor(glm::vec3(0, 1, 1));   //Set colour to clan
-
+void create_box()
+{
 	//plane floor
 	Plane *plane = new Plane (glm::vec3(-40., -15, 5), //Point A
 	glm::vec3(40., -15, 5), //Point B
-	glm::vec3(40., -15, -200), //Point C
-	glm::vec3(-40., -15, -200)); //Point D
-	plane->setColor(glm::vec3(0.8, 0.8, 0));
+	glm::vec3(40., -15, -350), //Point C
+	glm::vec3(-40., -15, -350)); //Point D
+	plane->setColor(glm::vec3(1, 0, 0));
 	plane->setSpecularity(false);
 
 	//plane Background
-    Plane* background = new Plane(glm::vec3(-40., 80, -200), //Point A
-	glm::vec3(-40., -20, -200), //Point B
-	glm::vec3(40., -20, -200), //Point C
-	glm::vec3(40., 80, -200));   //Point D
-	background->setColor(glm::vec3(0.2, 0.2, 0.2));
+    Plane* background = new Plane(glm::vec3(-40., 30, -200), //Point A
+	glm::vec3(-40., -15, -200), //Point B
+	glm::vec3(40., -15, -200), //Point C
+	glm::vec3(40., 30, -200));   //Point D
+	background->setColor(glm::vec3(1, 0, 0));
 	background->setSpecularity(false);
 
 	//plane left
-    Plane* left = new Plane(glm::vec3(-40., 80, 5), //Point A
-	glm::vec3(-40., -20, 5), //Point B
-	glm::vec3(-40., -20, -200), //Point C
-	glm::vec3(-40., 80, -200));   //Point D
-	left->setColor(glm::vec3(0.2, 0.2, 0));
+    Plane* left = new Plane(glm::vec3(-40., 30, 5), //Point A
+	glm::vec3(-40., -15, 5), //Point B
+	glm::vec3(-40., -15, -350), //Point C
+	glm::vec3(-40., 30, -350));   //Point D
+	left->setColor(glm::vec3(1, 0, 0));
 	left->setSpecularity(false);
 
 	//plane right
-    Plane* right = new Plane(glm::vec3(40., 80, 5), //Point A
-	glm::vec3(40., -20, 5), //Point B
-	glm::vec3(40., -20, -200), //Point C
-	glm::vec3(40., 80, -200));   //Point D
-	right->setColor(glm::vec3(0.2, 0, 0.2));
+    Plane* right = new Plane(glm::vec3(40., 30, 5), //Point A
+	glm::vec3(40., 30, -350),   //Point D
+	glm::vec3(40., -15, -350), //Point C
+	glm::vec3(40., -15, 5));   //Point D
+	right->setColor(glm::vec3(1, 0, 0));
 	right->setSpecularity(false);
 
 	//plane top
-    Plane *top = new Plane (glm::vec3(-40., 80, 5), //Point A
-	glm::vec3(40., 80, 5), //Point B
-	glm::vec3(40., 80, -200), //Point C
-	glm::vec3(-40., 80, -200)); //Point D
-	top->setColor(glm::vec3(0, 0.2, 0.2));
+    Plane *top = new Plane (glm::vec3(-40., 30, 5), //Point A
+	glm::vec3(-40., 30, -350),
+	glm::vec3(40., 30, -350),
+	glm::vec3(40., 30, 5)); //Point D
+	top->setColor(glm::vec3(1,0,0));
 	top->setSpecularity(false);
 
-	//plane back
-    Plane* back = new Plane(glm::vec3(-40., 80, 5), //Point A
-	glm::vec3(-40., -20, 5), //Point B
-	glm::vec3(40., -20, 5), //Point C
-	glm::vec3(40., 80, 5));   //Point D
-	back->setColor(glm::vec3(0.2, 0.2, 0.2));
+	//plane back  
+    Plane* back = new Plane(glm::vec3(-40., 30, 5), //Point A
+	glm::vec3(40., 30, 5),
+	glm::vec3(40., -15, 5), 
+	glm::vec3(-40., -15, 5));   //Point D
+	back->setColor(glm::vec3(1, 0, 0));
 	back->setSpecularity(false);
 
-	
-	sceneObjects.push_back(sphere1);		 //Add sphere to scene objects
-	sceneObjects.push_back(sphere2);		 //Add sphere to scene objects
-	sceneObjects.push_back(sphere3);		 //Add sphere to scene objects
-	sceneObjects.push_back(sphere4);		 //Add sphere to scene objects
-	sceneObjects.push_back(sphere5);		 //Add sphere to scene objects
-	sceneObjects.push_back(clind1);
-	sceneObjects.push_back(clind2);
-	sceneObjects.push_back(cone1);
-	sceneObjects.push_back(cone2);
-	sceneObjects.push_back(plane);
+	sceneObjects.push_back(plane); //index5
 	sceneObjects.push_back(background);
 	sceneObjects.push_back(top);
 	sceneObjects.push_back(left);
 	sceneObjects.push_back(right);
-	sceneObjects.push_back(back);
+	sceneObjects.push_back(back); //index10
 
-	Cylinder *clind4 = new Cylinder(glm::vec3(0, 0, -50), 2, 3);
-	clind4->setColor(glm::vec3(0, 1, 1));   //Set colour to clan
-	sceneObjects.push_back(clind4);
+}
+
+void create_mirror_at_top()
+{
+	Plane* mirror = new Plane(glm::vec3(-10., 10, -80.5), //Point A
+	glm::vec3(10., 10, -80.5), //Point B
+	glm::vec3(10., 20, -76), //Point C
+	glm::vec3(-10., 20, -76));   //Point D
+	mirror->setColor(glm::vec3(0, 0, 0));
+	mirror->setReflectivity(true, 1.01);
+
+	sceneObjects.push_back(mirror); //index 11
+
+}
+
+void creat_objs_on_table()
+{
+	Sphere *sphere1 = new Sphere(glm::vec3(1, 0, -60.0), 5); 
+	sphere1->setColor(glm::vec3(0, 0, 0));   //Set colour to blue
+	sphere1->setRefractivity(true, 1, 1.5);
+
+	Sphere *sphere2 = new Sphere(glm::vec3(-5, -3, -50), 2); 
+	sphere2->setColor(glm::vec3(1, 0, 0));   //Set colour to blue
+	sphere2->setTransparency(true);
+
+	Cylinder *clind1 = new Cylinder(glm::vec3(-8, -5, -60), 2, 10);
+	clind1->setColor(glm::vec3(0, 1, 1));   //Set colour to clan
+
+	Cone *cone1 = new Cone(glm::vec3(7, -5, -60), 2, 5);
+	cone1->setColor(glm::vec3(0, 1, 1));   //Set colour to clan
+
+	//earth
+	Sphere *sphere3 = new Sphere(glm::vec3(7, 3, -60.0), 3); 
+	sphere3->setColor(glm::vec3(0, 0, 1));   //Set colour to blue  -8, 0
+
+	sceneObjects.push_back(sphere1); //index 12
+	sceneObjects.push_back(sphere2);
+	sceneObjects.push_back(clind1);
+	sceneObjects.push_back(cone1);  //index 15
+	sceneObjects.push_back(sphere3); //index16
+}
+
+
+void initialize()
+{
+    glMatrixMode(GL_PROJECTION);
+    gluOrtho2D(XMIN, XMAX, YMIN, YMAX);
+    glClearColor(0, 0, 0, 1);
+
+	texture = TextureBMP("Butterfly.bmp");
+
+	creat_table(); //index 0-4
+	create_box();  //index 5-10
+	create_mirror_at_top(); //index 11
+	creat_objs_on_table(); //index 12-16
+
 }
 
 
