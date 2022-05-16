@@ -47,10 +47,10 @@ float Cylinder::intersect(glm::vec3 p0, glm::vec3 dir)
     if (intersct_h1 > cylinder_h && intersct_h2 > cylinder_h) {return -1;} 
     else if (intersct_h1 < yc && intersct_h2 < yc) {return -1;}
     else if (intersct_h1 > cylinder_h && intersct_h2 < cylinder_h){
-        return (yc + h - y0) / dy;  //with cap
+        return (yc + h - y0) / dy;  //with cap t2; 
     }else if (intersct_h2 > cylinder_h && intersct_h1 < cylinder_h)
     {
-        return (yc + h - y0) / dy; //with cap
+        return (yc + h - y0) / dy; //with cap t1; 
     }else if (t1 < 0) { return (t2 > 0) ? t2 : -1;}
 	else return t1;
 }

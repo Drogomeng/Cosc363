@@ -21,7 +21,7 @@
 using namespace std;
 
 const float EDIST = 40.0;
-const int NUMDIV = 500;
+const int NUMDIV = 300; //500
 const int MAX_STEPS = 5;
 const float XMIN = -10.0;
 const float XMAX = 10.0;
@@ -219,20 +219,102 @@ void display()
 		for (int j = 0; j < NUMDIV; j++)
 		{
 			yp = YMIN + j * cellY;
-			// glm::vec3 dir1(xp + 0.25 * cellX, yp + 0.75 * cellY, -EDIST);	
-			// glm::vec3 dir2(xp + 0.25 * cellX, yp + 0.25 * cellY, -EDIST);	
-			// glm::vec3 dir3(xp + 0.75 * cellX, yp + 0.25 * cellY, -EDIST);	
-			// glm::vec3 dir4(xp + 0.75 * cellX, yp + 0.75 * cellY, -EDIST);	
-
-			glm::vec3 dir1(xp + 0.5 * cellX, yp + 0.5 * cellY, -EDIST);	
-
-			Ray ray1 = Ray(eye, dir1);
-	
 			
-			glm::vec3 col = trace(ray1, 1);
-			glColor3f(col.r, col.g, col.b);
+			// //normal 
+			// glm::vec3 dir1(xp + 0.5 * cellX, yp + 0.5 * cellY, -EDIST);	
+			// Ray ray1 = Ray(eye, dir1);
+			// glm::vec3 col = trace(ray1, 1);
+			// glColor3f(col.r, col.g, col.b);
+			
+			//adptive anti-analising
+			glm::vec3 dir1(xp + 0.25 * cellX, yp + 0.75 * cellY, -EDIST);	
+			glm::vec3 dir2(xp + 0.25 * cellX, yp + 0.25 * cellY, -EDIST);	
+			glm::vec3 dir3(xp + 0.75 * cellX, yp + 0.25 * cellY, -EDIST);	
+			glm::vec3 dir4(xp + 0.75 * cellX, yp + 0.75 * cellY, -EDIST);	
 
-	
+			Ray ray1 = Ray(eye, dir1); glm::vec3 col1 = trace(ray1, 1);
+			Ray ray2 = Ray(eye, dir2); glm::vec3 col2 = trace(ray2, 1);
+			Ray ray3 = Ray(eye, dir3); glm::vec3 col3 = trace(ray3, 1);
+			Ray ray4 = Ray(eye, dir4); glm::vec3 col4 = trace(ray4, 1);
+
+			float average_col = (glm::length(col1) + glm::length(col2) + glm::length(col3) + glm::length(col4))/4;
+			float diff1_mean = glm::length(col1) - average_col;
+			float diff2_mean = glm::length(col2) - average_col;
+			float diff3_mean = glm::length(col3) - average_col;
+			float diff4_mean = glm::length(col4) - average_col;
+			glm::vec3 avg(4,4,4);
+
+			if (diff1_mean > diff2_mean && diff1_mean > diff3_mean && diff1_mean > diff4_mean && diff1_mean >= 0.1f*average_col)
+			{
+				//point (0.25, 0.75)
+				glm::vec3 dir11(xp + 0.125 * cellX, yp + 0.875 * cellY, -EDIST);	
+				glm::vec3 dir12(xp + 0.125 * cellX, yp + 0.625 * cellY, -EDIST);	
+				glm::vec3 dir13(xp + 0.35 * cellX, yp + 0.625 * cellY, -EDIST);	
+				glm::vec3 dir14(xp + 0.35 * cellX, yp + 0.875 * cellY, -EDIST);	
+
+				Ray ray11 = Ray(eye, dir11); glm::vec3 col11 = trace(ray11, 1);
+				Ray ray12 = Ray(eye, dir12); glm::vec3 col12 = trace(ray12, 1);
+				Ray ray13 = Ray(eye, dir13); glm::vec3 col13 = trace(ray13, 1);
+				Ray ray14 = Ray(eye, dir14); glm::vec3 col14 = trace(ray14, 1);
+
+				glm::vec3 col1 = col11 + col12 + col13 + col14;
+				col1 = col1/avg;
+			}
+
+			else if (diff2_mean > diff1_mean && diff2_mean > diff3_mean && diff2_mean > diff4_mean && diff2_mean >= 0.1f*average_col)
+			{
+				//point (0.25, 0.25)
+				glm::vec3 dir21(xp + 0.125 * cellX, yp + 0.375 * cellY, -EDIST);	
+				glm::vec3 dir22(xp + 0.125 * cellX, yp + 0.125 * cellY, -EDIST);	
+				glm::vec3 dir23(xp + 0.375 * cellX, yp + 0.125 * cellY, -EDIST);	
+				glm::vec3 dir24(xp + 0.375 * cellX, yp + 0.375 * cellY, -EDIST);	
+
+				Ray ray21 = Ray(eye, dir21); glm::vec3 col21 = trace(ray21, 1);
+				Ray ray22 = Ray(eye, dir22); glm::vec3 col22 = trace(ray22, 1);
+				Ray ray23 = Ray(eye, dir23); glm::vec3 col23 = trace(ray23, 1);
+				Ray ray24 = Ray(eye, dir24); glm::vec3 col24 = trace(ray24, 1);
+
+				glm::vec3 col2 = col21 + col22 + col23 + col24;
+				col2 = col2/avg;
+			}
+
+			else if (diff3_mean > diff1_mean && diff3_mean > diff2_mean && diff3_mean > diff4_mean && diff3_mean >= 0.1f*average_col)
+			{
+				//point (0.75, 0.25)
+				glm::vec3 dir31(xp + 0.625 * cellX, yp + 0.375 * cellY, -EDIST);	
+				glm::vec3 dir32(xp + 0.625 * cellX, yp + 0.125 * cellY, -EDIST);	
+				glm::vec3 dir33(xp + 0.875 * cellX, yp + 0.125 * cellY, -EDIST);	
+				glm::vec3 dir34(xp + 0.875 * cellX, yp + 0.375 * cellY, -EDIST);	
+
+				Ray ray31 = Ray(eye, dir31); glm::vec3 col31 = trace(ray31, 1);
+				Ray ray32 = Ray(eye, dir32); glm::vec3 col32 = trace(ray32, 1);
+				Ray ray33 = Ray(eye, dir33); glm::vec3 col33 = trace(ray33, 1);
+				Ray ray34 = Ray(eye, dir34); glm::vec3 col34 = trace(ray34, 1);
+
+				glm::vec3 col3 = col31 + col32 + col33 + col34;
+				col3 = col3/avg;
+			}
+
+			else if (diff4_mean > diff1_mean && diff4_mean > diff2_mean && diff4_mean > diff3_mean && diff4_mean >= 0.1f*average_col)
+			{
+				//point (0.75, 0.75)
+				glm::vec3 dir41(xp + 0.625 * cellX, yp + 0.875 * cellY, -EDIST);	
+				glm::vec3 dir42(xp + 0.625 * cellX, yp + 0.625 * cellY, -EDIST);	
+				glm::vec3 dir43(xp + 0.875 * cellX, yp + 0.625 * cellY, -EDIST);	
+				glm::vec3 dir44(xp + 0.875 * cellX, yp + 0.875 * cellY, -EDIST);	
+
+				Ray ray41 = Ray(eye, dir41); glm::vec3 col41 = trace(ray41, 1);
+				Ray ray42 = Ray(eye, dir42); glm::vec3 col42 = trace(ray42, 1);
+				Ray ray43 = Ray(eye, dir43); glm::vec3 col43 = trace(ray43, 1);
+				Ray ray44 = Ray(eye, dir44); glm::vec3 col44 = trace(ray44, 1);
+
+				glm::vec3 col4 = col41 + col42 + col43 + col44;
+				col4 = col4/avg;
+			}
+
+			glm::vec3 col = col1 + col2 + col3 + col4;
+			glColor3f(col.r/4, col.g/4, col.b/4);
+
 			glVertex2f(xp, yp);
 			glVertex2f(xp + cellX, yp);
 			glVertex2f(xp + cellX, yp + cellY);
@@ -349,7 +431,7 @@ void create_mirror_at_top()
 
 void creat_objs_on_table()
 {
-	Sphere *sphere1 = new Sphere(glm::vec3(1, 0, -60.0), 5); 
+	Sphere *sphere1 = new Sphere(glm::vec3(0, 0, -60.0), 5); 
 	sphere1->setColor(glm::vec3(0, 0, 0));   //Set colour to blue
 	sphere1->setRefractivity(true, 1, 1.5);
 
